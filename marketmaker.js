@@ -186,7 +186,7 @@ async function getExchangeInfo() {
 async function getTokenInfo(activePairs) {
   for (let i = 0; i < activePairs.length; i++) {
     const pair = activePairs[i];
-    const tokens = pair.split('-');
+    const tokens = getTokenAddressesFromId(pair) ;
     for (let j = 0; j < 2; j++) {
       const tokenAddress = tokens[j];
       if (TOKEN_INFO[tokenAddress.toLowerCase()]) continue
@@ -548,9 +548,9 @@ async function sendOrders(marketId) {
     return;
   }
 
-  const [baseTokenAddress, quoteTokenAddress] = marketId.split('-')
-  const baseTokenInfo = TOKEN_INFO[baseTokenAddress.toLowerCase()]
-  const quoteTokenInfo = TOKEN_INFO[quoteTokenAddress.toLowerCase()]
+    const [baseTokenAddress, quoteTokenAddress] = getTokenAddressesFromId(marketId);
+  const baseTokenInfo = TOKEN_INFO[baseTokenAddress]
+  const quoteTokenInfo = TOKEN_INFO[quoteTokenAddress]
   if (!baseTokenInfo || !quoteTokenInfo) {
     console.error(`Missing baseTokenInfo or quoteTokenInfo for sendOrders ${marketId}`);
     return;
@@ -701,7 +701,7 @@ async function signAndSendOrder(
   size,
   expirationTimeSeconds
 ) {
-  const [baseTokenAddress, quoteTokenAddress] = marketId.split('-')
+  const [baseTokenAddress, quoteTokenAddress] = getTokenAddressesFromId(marketId)
   const baseTokenInfo = TOKEN_INFO[baseTokenAddress.toLowerCase()]
   const quoteTokenInfo = TOKEN_INFO[quoteTokenAddress.toLowerCase()]
   if (!baseTokenInfo || !quoteTokenInfo) return
@@ -814,7 +814,7 @@ async function checkOrders(marketId) {
     return;
   }
 
-  let [baseTokenAddress, quoteTokenAddress] = marketId.split('-');
+  let [baseTokenAddress, quoteTokenAddress] = getTokenAddressesFromId(marketId);
   baseTokenAddress = baseTokenAddress.toLowerCase();
   quoteTokenAddress = quoteTokenAddress.toLowerCase();
   const baseTokenInfo = TOKEN_INFO[baseTokenAddress];
@@ -948,7 +948,7 @@ async function getBalances() {
   const tokens = getTokens();
   for (let i = 0; i < tokens.length; i++) {
     try {
-      const tokenAddress = tokens[i];
+      const tokenAddress = tokens[i].toLowerCase();
       BALANCES[tokenAddress] = await getBalanceOfToken(tokenAddress, EXCHANGE_INFO.exchangeAddress);
     } catch (e) {
       console.error(`Failed to getBalances for ${tokenAddress}, because: ${e.message}`)
@@ -1002,4 +1002,8 @@ async function getBalanceOfToken(tokenAddress, contractAddress) {
 
 async function getMMBotAccount() {
   return VAULT_TOKEN_ADDRESS ? VAULT_TOKEN_ADDRESS : WALLET.getAddress();
+}
+
+function getTokenAddressesFromId(marketId) {
+    return marketId.split('-').map((x) => x.toLowerCase());
 }
